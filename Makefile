@@ -16,6 +16,7 @@ all : main.cpp
 	-f v_simple.sc \
 	-o v_simple.bin \
 	--platform linux \
+	-p spirv \
 	--type vertex \
 	--verbose \
 	-i bgfx/src
@@ -23,6 +24,7 @@ all : main.cpp
 	-f f_simple.sc \
 	-o f_simple.bin \
 	--platform linux \
+	-p spirv \
 	--type fragment \
 	--verbose \
 	-i bgfx/src
