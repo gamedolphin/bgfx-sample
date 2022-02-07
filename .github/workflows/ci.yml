@@ -1,0 +1,27 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Setup
+      run: |
+        git submodule update --init --recursive
+    - name: Install deps
+      run: |
+        sudo apt-get update &&
+        sudo apt-get install -y libsdl2-dev libgl1-mesa-dev x11proto-core-dev libx11-dev
+    - name: Build bgfx
+      run: |
+        cd bgfx
+        make -j$(nproc) linux-release64
+    - name: Build sample
+      run: |
+        make all
