@@ -1,10 +1,11 @@
 #include <stdio.h>
-#include <SDL2/SDL.h>
+#include <fstream>
+
+#include <bx/math.h>
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
-#include <fstream>
-#include <bx/math.h>
 
 
 SDL_Window* window = NULL;
