@@ -3,7 +3,7 @@ CC = g++
 
 # COMPILER_FLAGS specifies the additional compilation options we're using
 # -w suppresses all warnings
-COMPILER_FLAGS = -w
+COMPILER_FLAGS = -w -DBX_CONFIG_DEBUG=0
 
 BGFX_HEADERS =  -Ibgfx/include -Ibx/include -Ibimg/include
 
