@@ -3,7 +3,7 @@ CC = g++
 
 # COMPILER_FLAGS specifies the additional compilation options we're using
 # -w suppresses all warnings
-COMPILER_FLAGS = -w
+COMPILER_FLAGS = -w -DBX_CONFIG_DEBUG=0
 
 BGFX_HEADERS =  -Ibgfx/include -Ibx/include -Ibimg/include
 
@@ -16,6 +16,7 @@ all : main.cpp
 	-f v_simple.sc \
 	-o v_simple.bin \
 	--platform linux \
+	-p spirv \
 	--type vertex \
 	--verbose \
 	-i bgfx/src
@@ -23,6 +24,7 @@ all : main.cpp
 	-f f_simple.sc \
 	-o f_simple.bin \
 	--platform linux \
+	-p spirv \
 	--type fragment \
 	--verbose \
 	-i bgfx/src
