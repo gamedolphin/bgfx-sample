@@ -7,7 +7,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 
-
 SDL_Window* window = NULL;
 const int WIDTH = 640;
 const int HEIGHT = 480;
@@ -66,6 +65,61 @@ static const uint16_t s_cubeTriList[] =
    1,2,3
   };
 
+void* getNativeWindowHandle(SDL_Window* _window)
+{
+  SDL_SysWMinfo wmi;
+  SDL_VERSION(&wmi.version);
+  if (!SDL_GetWindowWMInfo(_window, &wmi) )
+  {
+    return NULL;
+  }
+
+#	if BX_PLATFORM_LINUX || BX_PLATFORM_BSD
+#		if ENTRY_CONFIG_USE_WAYLAND
+  wl_egl_window *win_impl = (wl_egl_window*)SDL_GetWindowData(_window, "wl_egl_window");
+  if(!win_impl)
+  {
+    int width, height;
+    SDL_GetWindowSize(_window, &width, &height);
+    struct wl_surface* surface = wmi.info.wl.surface;
+    if(!surface)
+      return nullptr;
+    win_impl = wl_egl_window_create(surface, width, height);
+    SDL_SetWindowData(_window, "wl_egl_window", win_impl);
+  }
+  return (void*)(uintptr_t)win_impl;
+#		else
+  return (void*)wmi.info.x11.window;
+#		endif
+#	elif BX_PLATFORM_OSX || BX_PLATFORM_IOS
+  return wmi.info.cocoa.window;
+#	elif BX_PLATFORM_WINDOWS
+  return wmi.info.win.window;
+#   elif BX_PLATFORM_ANDROID
+  return wmi.info.android.window;
+#	endif // BX_PLATFORM_
+}
+
+void* getNativeDisplayHandle(SDL_Window* _window)
+{
+  SDL_SysWMinfo wmi;
+  SDL_VERSION(&wmi.version);
+  if (!SDL_GetWindowWMInfo(_window, &wmi) )
+  {
+    return NULL;
+  }
+
+#	if BX_PLATFORM_LINUX || BX_PLATFORM_BSD
+#		if ENTRY_CONFIG_USE_WAYLAND
+  return wmi.info.wl.display;
+#		else
+  return wmi.info.x11.display;
+#		endif // ENTRY_CONFIG_USE_WAYLAND
+#	else
+  return NULL;
+#	endif // BX_PLATFORM_*
+}
+
 bgfx::VertexBufferHandle m_vbh;
 bgfx::IndexBufferHandle m_ibh;
 bgfx::ProgramHandle m_program;
@@ -84,25 +138,19 @@ int main ( int argc, char* args[] ) {
     }
   }
 
-  SDL_SysWMinfo wmi;
-  SDL_VERSION(&wmi.version);
-  if (!SDL_GetWindowWMInfo(window, &wmi)) {
-    return 1;
-  }
-
-  bgfx::PlatformData pd;
-  // and give the pointer to the window to pd
-  pd.ndt = wmi.info.x11.display;
-  pd.nwh = (void*)(uintptr_t)wmi.info.x11.window;
-
-  // Tell bgfx about the platform and window
-  bgfx::setPlatformData(pd);
-
   // Render an empty frame
   bgfx::renderFrame();
 
   // Initialize bgfx
-  bgfx::init();
+  bgfx::Init init;
+  init.type     = bgfx::RendererType::Vulkan;
+  init.vendorId = BGFX_PCI_ID_NONE;
+  init.platformData.nwh  = getNativeWindowHandle(window);
+  init.platformData.ndt  = getNativeDisplayHandle(window);
+  init.resolution.width  = WIDTH;
+  init.resolution.height = HEIGHT;
+  init.resolution.reset  = BGFX_RESET_VSYNC;
+  bgfx::init(init);
 
   PosColorVertex::init();
   m_vbh = bgfx::createVertexBuffer(
@@ -121,16 +169,8 @@ int main ( int argc, char* args[] ) {
 
   m_program = bgfx::createProgram(vsh,fsh,  true);
 
-
-
-  // Reset window
-  bgfx::reset(WIDTH, HEIGHT, BGFX_RESET_VSYNC);
-
   // Enable debug text.
   bgfx::setDebug(BGFX_DEBUG_TEXT /*| BGFX_DEBUG_STATS*/);
-
-  // Set view rectangle for 0th view
-  bgfx::setViewRect(0, 0, 0, uint16_t(WIDTH), uint16_t(HEIGHT));
 
   // Clear the view rect
   bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x443355FF, 1.0f, 0);
@@ -196,6 +236,10 @@ int main ( int argc, char* args[] ) {
       bgfx::frame();
     }
   }
+
+  bgfx::destroy(m_vbh);
+  bgfx::destroy(m_ibh);
+  bgfx::destroy(m_program);
 
   bgfx::shutdown();
   // Free up window
