@@ -25,6 +25,7 @@ bgfx::ShaderHandle loadShader(const char* _name) {
         file.close();
     }
     const bgfx::Memory* mem = bgfx::copy(data,fileSize+1);
+    delete [] data;
     mem->data[mem->size-1] = '\0';
     bgfx::ShaderHandle handle = bgfx::createShader(mem);
     bgfx::setName(handle, _name);
